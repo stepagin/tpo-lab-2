@@ -1,5 +1,3 @@
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVRecord;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -12,11 +10,10 @@ import ru.stepagin.logarithms.LogN;
 import ru.stepagin.trigonometry.Sec;
 import ru.stepagin.trigonometry.Sin;
 
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.Reader;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+
+import static org.mockito.Mockito.when;
 
 public class EquationSystemTest {
 
@@ -28,37 +25,30 @@ public class EquationSystemTest {
 
     static Sec secMock;
 
-    static final Double accuracy = 0.0001;
-
-    static <T extends Function> T setMock(String path, Class<T> mockClass) {
-        T mockInstance = Mockito.mock(mockClass);
-        try {
-            Reader reader = new FileReader(path);
-            Iterable<CSVRecord> records = CSVFormat.DEFAULT.parse(reader);
-            for (CSVRecord record : records) {
-                Double input = (Double.parseDouble(record.get(0)));
-                BigDecimal output;
-                if (record.get(1).equals("NaN")) output = BigDecimal.valueOf(Double.NaN);
-                else {
-                    output = BigDecimal.valueOf(Double.parseDouble(record.get(1)));
-                }
-                Mockito.when(mockInstance.calc(new BigDecimal(input))).thenReturn((BigDecimal) output);
-            }
-
-        } catch (IOException e) {
-            throw new RuntimeException("Не найден файл или не удалось его прочитать: " + e.getMessage());
+    static <T extends Function> T setSpy(T mockClass, java.util.function.Function<Double, BigDecimal> f, int from, int to) {
+        T functionSpy = Mockito.spy(mockClass);
+        for (int i = from; i <= to; i++) {
+            BigDecimal res = f.apply((double) i / 10);
+            if (res == null) continue;
+            when(functionSpy.calc(BigDecimal.valueOf(i / 10))).thenReturn(res);
         }
-        return mockInstance;
+
+        return functionSpy;
     }
 
 
     @BeforeAll
     static void init() {
-        sinMock = setMock( "./csv/SinInput.csv", Sin.class);
-        lnMock = setMock(  "./csv/LnInput.csv", Ln.class);
-        log3Mock = setMock("./csv/Log3Input.csv", LogN.class);
-        log5Mock = setMock("./csv/Log5Input.csv", LogN.class);
-        secMock = setMock( "./csv/SecInput.csv", Sec.class);
+        Sin sin = new Sin();
+        sinMock = setSpy(sin, (x) -> BigDecimal.valueOf(Math.sin(x)), -10, 50);
+        Ln ln = new Ln();
+        lnMock = setSpy(ln, (x) -> BigDecimal.valueOf(Math.log(x)), 1, 50);
+        LogN log3 = new LogN(3);
+        log3Mock = setSpy(log3, (x) -> BigDecimal.valueOf(Math.log(x) / Math.log(3)), 1, 50);
+        LogN log5 = new LogN(5);
+        log5Mock = setSpy(log5, (x) -> BigDecimal.valueOf(Math.log(x) / Math.log(5)), 1, 50);
+        Sec sec = new Sec();
+        secMock = setSpy(sec, (x) -> BigDecimal.valueOf(1 / Math.cos(x)), -10, 50);
     }
 
 

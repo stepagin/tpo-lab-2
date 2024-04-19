@@ -30,7 +30,7 @@ public class EquationSystem extends Function {
 
     @Override
     public BigDecimal calc(BigDecimal x) {
-        x = BigDecimal.valueOf(x.doubleValue());
+//        x = BigDecimal.valueOf(x.doubleValue()).setScale(10, RoundingMode.HALF_UP);
         if (x.compareTo(BigDecimal.ZERO) <= 0) {
             // (sin(x) * sec(x))
             BigDecimal term1 = this.sec.calc(x);
@@ -45,14 +45,15 @@ public class EquationSystem extends Function {
             // term3: ((term1 * term2) + (log_3(x) ^ 3))
             if (x.compareTo(BigDecimal.ONE) == 0)
                 return BigDecimal.ZERO;
+            System.out.println("log5(" + x + ") =   " + log5.calc(x));
+//            System.out.println("log5(\"" + x + "\") = " + log5.calc(x.toString()));
             BigDecimal term1 = (log5.calc(x).setScale(10, RoundingMode.HALF_EVEN)
                     .pow(2)
                     .multiply(ln.calc(x)))
                     .divide(log3.calc(x),
                             RoundingMode.HALF_EVEN);
             BigDecimal term2 = (log5.calc(x).pow(2)).subtract(log5.calc(x));
-            BigDecimal term3 = (((term1).multiply(term2)).add(log3.calc(x).pow(3)));
-            return term3;
+            return (((term1).multiply(term2)).add(log3.calc(x).pow(3)));
         }
     }
 
